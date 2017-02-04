@@ -5,11 +5,19 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+
+import java.util.function.Consumer;
 
 public class MainActivity extends AppCompatActivity {
+
+    //Client ID (Consumer Key)
+    //dj0yJmk9MW5TVlY1bTQ1YkpHJmQ9WVdrOU1IZ3lTMDA0TTJNbWNHbzlNQS0tJnM9Y29uc3VtZXJzZWNyZXQmeD1jNA--
+    //Client Secret (Consumer Secret)
+    //0fbe3181ed15e082ebf693048d5fd8b4c426b064
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
