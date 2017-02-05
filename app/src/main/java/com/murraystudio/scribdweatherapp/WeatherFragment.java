@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -64,8 +63,8 @@ public class WeatherFragment extends Fragment {
         mLayoutManager = new LinearLayoutManager(getActivity());
         setRecyclerViewLayout();
 
-        temp = (TextView) rootView.findViewById(R.id.location_name);
-        city = (TextView) rootView.findViewById(R.id.current_temperature);
+        temp = (TextView) rootView.findViewById(R.id.current_temperature);
+        city = (TextView) rootView.findViewById(R.id.location_name);
 
         //swipe down to refresh data
         swipeRefreshLayout =  (SwipeRefreshLayout) rootView.findViewById(R.id.weather_swipe_refresh);
@@ -94,7 +93,6 @@ public class WeatherFragment extends Fragment {
 
 
         }
-
 
         return rootView;
     }
@@ -141,11 +139,39 @@ public class WeatherFragment extends Fragment {
     private void updateWeatherUI(WeatherInfo weatherInfo){
 
         //if weatherInfo is null then just use previous weatherData values
+        //otherwise update weatherData object with new data
         if(weatherInfo != null) {
             weatherData.condition.currentTemp = weatherInfo.getCurrentTemp();
             weatherData.location.name = weatherInfo.getLocationCity();
-            Log.i("getDescription", weatherInfo.getForecastInfo1().getForecastText());
-            Log.i("forecast1", weatherInfo.getForecastInfo1().getForecastDate());
+            weatherData.forecast.dayOfWeek.add(0, weatherInfo.getForecastInfo1().getForecastDay());
+            weatherData.forecast.dayOfWeek.add(1, weatherInfo.getForecastInfo2().getForecastDay());
+            weatherData.forecast.dayOfWeek.add(2, weatherInfo.getForecastInfo3().getForecastDay());
+            weatherData.forecast.dayOfWeek.add(3, weatherInfo.getForecastInfo4().getForecastDay());
+            weatherData.forecast.dayOfWeek.add(4, weatherInfo.getForecastInfo5().getForecastDay());
+
+            weatherData.forecast.description.add(0, weatherInfo.getForecastInfo1().getForecastText());
+            weatherData.forecast.description.add(1, weatherInfo.getForecastInfo2().getForecastText());
+            weatherData.forecast.description.add(2, weatherInfo.getForecastInfo3().getForecastText());
+            weatherData.forecast.description.add(3, weatherInfo.getForecastInfo4().getForecastText());
+            weatherData.forecast.description.add(4, weatherInfo.getForecastInfo5().getForecastText());
+
+            weatherData.forecast.tempMin.add(0, weatherInfo.getForecastInfo1().getForecastTempLow());
+            weatherData.forecast.tempMin.add(1, weatherInfo.getForecastInfo2().getForecastTempLow());
+            weatherData.forecast.tempMin.add(2, weatherInfo.getForecastInfo3().getForecastTempLow());
+            weatherData.forecast.tempMin.add(3, weatherInfo.getForecastInfo4().getForecastTempLow());
+            weatherData.forecast.tempMin.add(4, weatherInfo.getForecastInfo5().getForecastTempLow());
+
+            weatherData.forecast.tempMax.add(0, weatherInfo.getForecastInfo1().getForecastTempHigh());
+            weatherData.forecast.tempMax.add(1, weatherInfo.getForecastInfo2().getForecastTempHigh());
+            weatherData.forecast.tempMax.add(2, weatherInfo.getForecastInfo3().getForecastTempHigh());
+            weatherData.forecast.tempMax.add(3, weatherInfo.getForecastInfo4().getForecastTempHigh());
+            weatherData.forecast.tempMax.add(4, weatherInfo.getForecastInfo5().getForecastTempHigh());
+
+            weatherData.forecast.imageURL.add(0, weatherInfo.getForecastInfo1().getForecastConditionIconURL());
+            weatherData.forecast.imageURL.add(1, weatherInfo.getForecastInfo2().getForecastConditionIconURL());
+            weatherData.forecast.imageURL.add(2, weatherInfo.getForecastInfo3().getForecastConditionIconURL());
+            weatherData.forecast.imageURL.add(3, weatherInfo.getForecastInfo4().getForecastConditionIconURL());
+            weatherData.forecast.imageURL.add(4, weatherInfo.getForecastInfo5().getForecastConditionIconURL());
         }
 
         //we have weatherdata so build views and set it to our recyclerview

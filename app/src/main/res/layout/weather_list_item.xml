@@ -9,13 +9,20 @@
         android:id="@+id/day"
         android:text="Today"
         android:layout_weight="3"
-        android:layout_marginRight="20dp"
         style="@style/WeatherForecastListItemText" />
+
+    <ImageView
+        android:id="@+id/conditionImage"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_gravity="center"
+        android:layout_marginRight="5dp"
+        android:src="@android:drawable/ic_dialog_info" />
 
     <TextView
         android:id="@+id/description"
         android:text="Rain until evening"
-        android:layout_weight="5"
+        android:layout_weight="6"
         style="@style/WeatherForecastListItemText" />
 
     <TextView
