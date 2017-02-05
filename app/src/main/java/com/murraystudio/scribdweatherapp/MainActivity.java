@@ -1,5 +1,6 @@
 package com.murraystudio.scribdweatherapp;
 
+import android.app.FragmentManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -23,8 +24,10 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
 
     //AIzaSyBI9fQtuPNp30rRfTrauC7QYaVCOjCmolw
 
-    private CityPickFragment cityPickFragment;
+    private WeatherFragment weatherFragment;
     private PlaceAutocompleteFragment autocompleteFragment;
+
+    private FragmentManager fragmentManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,32 +36,49 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        fragmentManager = getFragmentManager();
 
-        // Retrieve the PlaceAutocompleteFragment.
-        autocompleteFragment = new PlaceAutocompleteFragment();
-        // Register a listener to receive callbacks when a place has been selected or an error has
-        // occurred.
-        autocompleteFragment.setOnPlaceSelectedListener(this);
+        if (savedInstanceState == null) {
+            // Retrieve the PlaceAutocompleteFragment.
+            autocompleteFragment = new PlaceAutocompleteFragment();
+            // Register a listener to receive callbacks when a place has been selected or an error has
+            // occurred.
+            autocompleteFragment.setOnPlaceSelectedListener(this);
+
+            weatherFragment = new WeatherFragment();
+            //getFragmentManager().beginTransaction().replace(R.id.fragment_container, weatherFragment).commit();
+
+            fragmentManager
+                    .beginTransaction()
+                    .add(R.id.fragment_container, weatherFragment, "weatherFragment")
+                    .add(R.id.fragment_container, autocompleteFragment, "autocompleteFragment")
+                    .commit();
+        }
+        else{
+            weatherFragment = (WeatherFragment) fragmentManager.findFragmentByTag("weatherFragment");
+            autocompleteFragment = (PlaceAutocompleteFragment) fragmentManager.findFragmentByTag("autocompleteFragment");
+            autocompleteFragment.setOnPlaceSelectedListener(this);
+        }
+
+        fragmentManager
+                .beginTransaction()
+                .hide(autocompleteFragment)
+                .commit();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getFragmentManager()
-                        .beginTransaction()
-                        .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out)
-                        .replace(R.id.fragment_container, autocompleteFragment)
-                        .addToBackStack("Search Cities")
-                        .commit();
+
+                        fragmentManager
+                                .beginTransaction()
+                                .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out, android.R.animator.fade_in, android.R.animator.fade_out)
+                                .hide(weatherFragment)
+                                .show(autocompleteFragment)
+                                .addToBackStack("Search Cities")
+                                .commit();
             }
         });
-
-
-
-        cityPickFragment = new CityPickFragment();
-        getFragmentManager().beginTransaction().replace(R.id.fragment_container, cityPickFragment).commit();
-        // Replace whatever is in the fragment_container view with this fragment
-        //getFragmentManager().beginTransaction().replace(R.id.fragment_container, cityPickFragment).commit();
     }
 
     @Override
@@ -86,6 +106,14 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
     @Override
     public void onPlaceSelected(Place place) {
         Log.i("MAIN ACTIVITY", "Place Selected: " + place.getName());
+        weatherFragment.updateWeather(place.getName().toString());
+
+        fragmentManager
+                .beginTransaction()
+                .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out)
+                .hide(autocompleteFragment)
+                .show(weatherFragment)
+                .commit();
     }
 
     @Override
