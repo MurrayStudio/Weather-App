@@ -3,6 +3,8 @@ package com.murraystudio.scribdweatherapp;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.murraystudio.scribdweatherapp.adapters.WeatherForecastAdapter;
 import com.murraystudio.scribdweatherapp.datamodels.WeatherData;
 
 import zh.wang.android.yweathergetter4a.WeatherInfo;
@@ -30,6 +33,15 @@ public class WeatherFragment extends Fragment {
 
     private String currentCity = "portland oregon";
 
+    protected RecyclerView mRecyclerView;
+    protected WeatherForecastAdapter weatherForecastAdapter;
+    protected RecyclerView.LayoutManager mLayoutManager;
+    protected LayoutManagerType mCurrentLayoutManagerType;
+
+    private enum LayoutManagerType {
+        LINEAR_LAYOUT_MANAGER
+    }
+
     private TextView city;
     private TextView temp;
 
@@ -48,8 +60,12 @@ public class WeatherFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.weather, container, false);
         rootView.setTag(TAG);
 
-        temp = (TextView) rootView.findViewById(R.id.temperature);
-        city = (TextView) rootView.findViewById(R.id.city);
+        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.forecast_recycler_view);
+        mLayoutManager = new LinearLayoutManager(getActivity());
+        setRecyclerViewLayout();
+
+        temp = (TextView) rootView.findViewById(R.id.location_name);
+        city = (TextView) rootView.findViewById(R.id.current_temperature);
 
         //swipe down to refresh data
         swipeRefreshLayout =  (SwipeRefreshLayout) rootView.findViewById(R.id.weather_swipe_refresh);
@@ -126,12 +142,17 @@ public class WeatherFragment extends Fragment {
 
         //if weatherInfo is null then just use previous weatherData values
         if(weatherInfo != null) {
-            weatherData.condition.temp = weatherInfo.getCurrentTemp();
+            weatherData.condition.currentTemp = weatherInfo.getCurrentTemp();
             weatherData.location.name = weatherInfo.getLocationCity();
             Log.i("getDescription", weatherInfo.getForecastInfo1().getForecastText());
             Log.i("forecast1", weatherInfo.getForecastInfo1().getForecastDate());
         }
-        temp.setText(Integer.toString(weatherData.condition.temp) + "°");
+
+        //we have weatherdata so build views and set it to our recyclerview
+        weatherForecastAdapter = new WeatherForecastAdapter(weatherData, getActivity());
+        mRecyclerView.setAdapter(weatherForecastAdapter);
+
+        temp.setText(Integer.toString(weatherData.condition.currentTemp) + "°");
         city.setText(weatherData.location.name);
         swipeRefreshLayout.setRefreshing(false);
     }
@@ -140,7 +161,28 @@ public class WeatherFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString("currentcity", currentCity);
-
         outState.putParcelable("key", weatherData);
+    }
+
+    /*
+*
+* A helper method to set the layout for the recycler view.
+* If the layout is already set, then we get the scroll position.
+*
+ */
+    private void setRecyclerViewLayout() {
+        int scrollPosition = 0;
+
+        // If a layout manager has already been set, get current scroll position.
+        if (mRecyclerView.getLayoutManager() != null) {
+            scrollPosition = ((LinearLayoutManager) mRecyclerView.getLayoutManager())
+                    .findFirstCompletelyVisibleItemPosition();
+        }
+
+        mLayoutManager = new LinearLayoutManager(getActivity());
+        mCurrentLayoutManagerType = LayoutManagerType.LINEAR_LAYOUT_MANAGER;
+
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        mRecyclerView.scrollToPosition(scrollPosition);
     }
 }

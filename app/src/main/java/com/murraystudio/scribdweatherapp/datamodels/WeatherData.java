@@ -3,6 +3,9 @@ package com.murraystudio.scribdweatherapp.datamodels;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by sushi_000 on 2/3/2017.
  */
@@ -12,67 +15,34 @@ public class WeatherData implements Parcelable{
     public String imageUrl;
 
     public Condition condition = new Condition();
-    public Wind wind = new Wind();
-    public Atmosphere atmosphere = new Atmosphere();
     public Forecast forecast = new Forecast();
     public Location location = new Location();
-    public Astronomy astronomy = new Astronomy();
-    public Units units = new Units();
-
-    public String lastUpdate;
 
     public WeatherData() {
-
+        //empty
     }
 
     public static class Condition {
-        public String description;
-        public int code;
-        public String date;
-        public static int temp;
+        public static String currentDescription;
+        public static String date;
+        public static int currentTemp;
     }
 
-    public  class Forecast {
-        public int tempMin;
-        public int tempMax;
-        public String description;
-        public int code;
-    }
-
-    public static class Atmosphere {
-        public int humidity;
-        public float visibility;
-        public float pressure;
-        public int rising;
-    }
-
-    public class Wind {
-        public int chill;
-        public int direction;
-        public int speed;
-    }
-
-    public class Units {
-        public String speed;
-        public String distance;
-        public String pressure;
-        public String temperature;
+    public static class Forecast {
+        public static List<Integer> tempMin = new ArrayList<>();
+        public static List<Integer> tempMax = new ArrayList<>();
+        public static List<String> description = new ArrayList<>();
+        public static List<Integer> windSpeed = new ArrayList<>();
+        public static List<String> dayOfWeek = new ArrayList<>();
+        public static List<String> imageURL = new ArrayList<>();
     }
 
     public static class Location {
         public static String name;
-        public String region;
-        public String country;
-    }
-
-    public class Astronomy {
-        public String sunRise;
-        public String sunSet;
     }
 
     public WeatherData(Parcel in) {
         imageUrl = in.readString();
-        lastUpdate = in.readString();
     }
 
     public static final Creator<WeatherData> CREATOR = new Creator<WeatherData>() {
@@ -94,8 +64,19 @@ public class WeatherData implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
+        //location
         parcel.writeString(Location.name);
-        parcel.writeInt(Condition.temp);
+        //condition
+        parcel.writeString(Condition.currentDescription);
+        parcel.writeString(Condition.date);
+        parcel.writeInt(Condition.currentTemp);
+        //forecast
+        parcel.writeList(Forecast.tempMin);
+        parcel.writeList(Forecast.tempMax);
+        parcel.writeList(Forecast.description);
+        parcel.writeList(Forecast.windSpeed);
+        parcel.writeList(Forecast.dayOfWeek);
+        parcel.writeList(Forecast.imageURL);
     }
 
 }
