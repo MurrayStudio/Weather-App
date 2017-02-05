@@ -3,6 +3,7 @@ package com.murraystudio.scribdweatherapp;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,11 +64,19 @@ public class WeatherFragment extends Fragment {
             updateWeatherByLocation();
         }
         else{
-            // Restore last state
-            // this will only reload the last city
-            //and requires a new network call
+
             currentCity = savedInstanceState.getString("currentcity");
-            updateWeatherBySearch(currentCity);
+
+            //gets weather data
+            if(weatherData != null) {
+                weatherData = savedInstanceState.getParcelable("key"); //config change so old data before change
+                updateWeatherUI(null); //update UI using old state.
+            }
+            else{
+                updateWeatherBySearch(currentCity); //we have no previous weather data so try retrieving new data
+            }
+
+
         }
 
 
@@ -114,9 +123,15 @@ public class WeatherFragment extends Fragment {
     }
 
     private void updateWeatherUI(WeatherInfo weatherInfo){
-        weatherData.condition.temp = weatherInfo.getCurrentTemp();
-        weatherData.location.name = weatherInfo.getLocationCity();
-        temp.setText(Integer.toString(weatherData.condition.temp));
+
+        //if weatherInfo is null then just use previous weatherData values
+        if(weatherInfo != null) {
+            weatherData.condition.temp = weatherInfo.getCurrentTemp();
+            weatherData.location.name = weatherInfo.getLocationCity();
+            Log.i("getDescription", weatherInfo.getForecastInfo1().getForecastText());
+            Log.i("forecast1", weatherInfo.getForecastInfo1().getForecastDate());
+        }
+        temp.setText(Integer.toString(weatherData.condition.temp) + "°");
         city.setText(weatherData.location.name);
         swipeRefreshLayout.setRefreshing(false);
     }
@@ -125,5 +140,7 @@ public class WeatherFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString("currentcity", currentCity);
+
+        outState.putParcelable("key", weatherData);
     }
 }
