@@ -1,8 +1,11 @@
 package com.murraystudio.scribdweatherapp;
 
+import android.Manifest;
 import android.app.FragmentManager;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -28,6 +31,8 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
     private PlaceAutocompleteFragment autocompleteFragment;
 
     private FragmentManager fragmentManager;
+
+    private final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +64,8 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
             autocompleteFragment = (PlaceAutocompleteFragment) fragmentManager.findFragmentByTag("autocompleteFragment");
             autocompleteFragment.setOnPlaceSelectedListener(this);
         }
+
+        permissionsCheck();
 
         fragmentManager
                 .beginTransaction()
@@ -106,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
     @Override
     public void onPlaceSelected(Place place) {
         Log.i("MAIN ACTIVITY", "Place Selected: " + place.getName());
-        weatherFragment.updateWeather(place.getName().toString());
+        weatherFragment.updateWeatherBySearch(place.getName().toString());
 
         fragmentManager
                 .beginTransaction()
@@ -119,5 +126,43 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
     @Override
     public void onError(Status status) {
         Log.e("MAIN ACTIVITY", "onError: Status = " + status.toString());
+    }
+
+    private void permissionsCheck() {
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            requestPermissions(new String[]{
+                            Manifest.permission.READ_CONTACTS,
+                            Manifest.permission.ACCESS_FINE_LOCATION},
+                    ASK_MULTIPLE_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case ASK_MULTIPLE_PERMISSION_REQUEST_CODE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 }

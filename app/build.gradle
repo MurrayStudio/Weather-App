@@ -5,7 +5,7 @@ android {
     buildToolsVersion "24.0.0"
     defaultConfig {
         applicationId "com.murraystudio.scribdweatherapp"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"

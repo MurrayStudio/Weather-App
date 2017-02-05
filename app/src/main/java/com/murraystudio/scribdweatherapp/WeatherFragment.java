@@ -3,11 +3,11 @@ package com.murraystudio.scribdweatherapp;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.murraystudio.scribdweatherapp.datamodels.WeatherData;
 
@@ -29,11 +29,15 @@ public class WeatherFragment extends Fragment {
 
     private String currentCity = "portland oregon";
 
-    TextView temp;
+    private TextView city;
+    private TextView temp;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        weatherData = new WeatherData();
+        mYahooWeather = YahooWeather.getInstance();
 
     }
 
@@ -43,33 +47,35 @@ public class WeatherFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.weather, container, false);
         rootView.setTag(TAG);
 
-        if (savedInstanceState != null) {
-            // Restore last state
-            currentCity = savedInstanceState.getString("currentcity");
-        }
-
         temp = (TextView) rootView.findViewById(R.id.temperature);
-
-        weatherData = new WeatherData();
-        mYahooWeather = YahooWeather.getInstance();
+        city = (TextView) rootView.findViewById(R.id.city);
 
         //swipe down to refresh data
         swipeRefreshLayout =  (SwipeRefreshLayout) rootView.findViewById(R.id.weather_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                updateWeather(currentCity);
+                updateWeatherBySearch(currentCity);
             }
         });
 
+        if (savedInstanceState == null) {
+            updateWeatherByLocation();
+        }
+        else{
+            // Restore last state
+            // this will only reload the last city
+            //and requires a new network call
+            currentCity = savedInstanceState.getString("currentcity");
+            updateWeatherBySearch(currentCity);
+        }
 
-        updateWeather(currentCity);
 
         return rootView;
     }
 
 
-    public void updateWeather(String placeSearchTerm){
+    public void updateWeatherBySearch(String placeSearchTerm){
 
         swipeRefreshLayout.setRefreshing(true);
 
@@ -78,15 +84,41 @@ public class WeatherFragment extends Fragment {
         mYahooWeather.queryYahooWeatherByPlaceName(getActivity(), placeSearchTerm, new YahooWeatherInfoListener() {
             @Override
             public void gotWeatherInfo(WeatherInfo weatherInfo, YahooWeather.ErrorType errorType) {
-                Log.i("PORTLAND TEMP: ", Integer.toString(weatherInfo.getCurrentTemp()));
-
-                weatherData.condition.temp = weatherInfo.getCurrentTemp();
-
-                temp.setText(Integer.toString(weatherData.condition.temp));
-
-                swipeRefreshLayout.setRefreshing(false);
+                if(weatherInfo != null) {
+                    updateWeatherUI(weatherInfo);
+                }
+                else{
+                    Toast.makeText(getActivity(), "Unable to pull weather info from provider.", Toast.LENGTH_LONG).show();
+                }
             }
         });
+    }
+
+    public void updateWeatherByLocation(){
+
+        swipeRefreshLayout.setRefreshing(true);
+
+        mYahooWeather.queryYahooWeatherByGPS(getActivity(), new YahooWeatherInfoListener() {
+            @Override
+            public void gotWeatherInfo(WeatherInfo weatherInfo, YahooWeather.ErrorType errorType) {
+                if(weatherInfo != null) {
+                    currentCity = weatherInfo.getLocationCity();
+                    updateWeatherUI(weatherInfo);
+                }
+                else{
+                    Toast.makeText(getActivity(), "Unable to pull weather info using current location.", Toast.LENGTH_LONG).show();
+                    updateWeatherBySearch("Portland Oregon");
+                }
+            }
+        });
+    }
+
+    private void updateWeatherUI(WeatherInfo weatherInfo){
+        weatherData.condition.temp = weatherInfo.getCurrentTemp();
+        weatherData.location.name = weatherInfo.getLocationCity();
+        temp.setText(Integer.toString(weatherData.condition.temp));
+        city.setText(weatherData.location.name);
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     @Override
@@ -94,5 +126,4 @@ public class WeatherFragment extends Fragment {
         super.onSaveInstanceState(outState);
         outState.putString("currentcity", currentCity);
     }
-
 }
