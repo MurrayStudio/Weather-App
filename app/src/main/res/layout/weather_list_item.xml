@@ -3,6 +3,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:paddingTop="10dp"
     android:orientation="horizontal">
 
     <TextView
@@ -21,19 +22,23 @@
     <TextView
         android:id="@+id/description"
         android:text="Rain until evening"
-        android:layout_weight="6"
+        android:layout_weight="5"
         style="@style/WeatherForecastListItemText" />
 
     <TextView
         android:id="@+id/maximum_temperature"
         android:text="19°"
         android:layout_weight="1"
+        android:maxLines="1"
+        android:gravity="right"
         android:layout_marginRight="3dp"
         style="@style/WeatherForecastListItemTextEmphasis" />
 
     <TextView
         android:id="@+id/minimum_temperature"
         android:text="14°"
+        android:gravity="right"
+        android:maxLines="1"
         android:layout_weight="1"
         style="@style/WeatherForecastListItemTextDeEmphasis" />
 

@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -91,14 +90,10 @@ public class WeatherFragment extends Fragment {
             SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
             if(sharedPref.getBoolean("permissions", false) == true) {
 
-                Log.i("TRUE", "TRUE");
-
                 updateWeatherByLocation();
             }
             else{
                 updateWeatherBySearch("Mountain View California");
-
-                Log.i("False", "False");
             }
         }
         else{
@@ -108,7 +103,12 @@ public class WeatherFragment extends Fragment {
             //gets weather data
             if(weatherData != null) {
                 weatherData = savedInstanceState.getParcelable("key"); //config change so old data before change
+
+                weatherForecastAdapter = new WeatherForecastAdapter(weatherData, getActivity());
+                mRecyclerView.setAdapter(weatherForecastAdapter);
+
                 updateWeatherUI(null); //update UI using old state.
+
             }
             else{
                 updateWeatherBySearch(currentCity); //we have no previous weather data so try retrieving new data
@@ -134,7 +134,14 @@ public class WeatherFragment extends Fragment {
                     updateWeatherUI(weatherInfo);
                 }
                 else{
-                    Toast.makeText(getActivity(), "Unable to pull weather info from provider.", Toast.LENGTH_LONG).show();
+                    if(errorType.toString().equals("ParsingFailed")){
+                        Toast.makeText(getActivity(), "Can't get weather for that city.", Toast.LENGTH_LONG).show();
+                        updateWeatherBySearch("Portland Oregon");
+                    }
+                    else {
+                        Toast.makeText(getActivity(), "Unable to pull weather info from provider.", Toast.LENGTH_LONG).show();
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
                 }
             }
         });
@@ -164,7 +171,7 @@ public class WeatherFragment extends Fragment {
         //if weatherInfo is null then just use previous weatherData values
         //otherwise update weatherData object with new data
         if(weatherInfo != null) {
-            weatherData.condition.currentTemp = weatherInfo.getCurrentTemp();
+            weatherData.condition.currentTemp = celsiusToFahrenheit(weatherInfo.getCurrentTemp());
             weatherData.location.name = weatherInfo.getLocationCity();
             weatherData.forecast.dayOfWeek.add(0, weatherInfo.getForecastInfo1().getForecastDay());
             weatherData.forecast.dayOfWeek.add(1, weatherInfo.getForecastInfo2().getForecastDay());
@@ -178,17 +185,17 @@ public class WeatherFragment extends Fragment {
             weatherData.forecast.description.add(3, weatherInfo.getForecastInfo4().getForecastText());
             weatherData.forecast.description.add(4, weatherInfo.getForecastInfo5().getForecastText());
 
-            weatherData.forecast.tempMin.add(0, weatherInfo.getForecastInfo1().getForecastTempLow());
-            weatherData.forecast.tempMin.add(1, weatherInfo.getForecastInfo2().getForecastTempLow());
-            weatherData.forecast.tempMin.add(2, weatherInfo.getForecastInfo3().getForecastTempLow());
-            weatherData.forecast.tempMin.add(3, weatherInfo.getForecastInfo4().getForecastTempLow());
-            weatherData.forecast.tempMin.add(4, weatherInfo.getForecastInfo5().getForecastTempLow());
+            weatherData.forecast.tempMin.add(0, celsiusToFahrenheit(weatherInfo.getForecastInfo1().getForecastTempLow()));
+            weatherData.forecast.tempMin.add(1, celsiusToFahrenheit(weatherInfo.getForecastInfo2().getForecastTempLow()));
+            weatherData.forecast.tempMin.add(2, celsiusToFahrenheit(weatherInfo.getForecastInfo3().getForecastTempLow()));
+            weatherData.forecast.tempMin.add(3, celsiusToFahrenheit(weatherInfo.getForecastInfo4().getForecastTempLow()));
+            weatherData.forecast.tempMin.add(4, celsiusToFahrenheit(weatherInfo.getForecastInfo5().getForecastTempLow()));
 
-            weatherData.forecast.tempMax.add(0, weatherInfo.getForecastInfo1().getForecastTempHigh());
-            weatherData.forecast.tempMax.add(1, weatherInfo.getForecastInfo2().getForecastTempHigh());
-            weatherData.forecast.tempMax.add(2, weatherInfo.getForecastInfo3().getForecastTempHigh());
-            weatherData.forecast.tempMax.add(3, weatherInfo.getForecastInfo4().getForecastTempHigh());
-            weatherData.forecast.tempMax.add(4, weatherInfo.getForecastInfo5().getForecastTempHigh());
+            weatherData.forecast.tempMax.add(0, celsiusToFahrenheit(weatherInfo.getForecastInfo1().getForecastTempHigh()));
+            weatherData.forecast.tempMax.add(1, celsiusToFahrenheit(weatherInfo.getForecastInfo2().getForecastTempHigh()));
+            weatherData.forecast.tempMax.add(2, celsiusToFahrenheit(weatherInfo.getForecastInfo3().getForecastTempHigh()));
+            weatherData.forecast.tempMax.add(3, celsiusToFahrenheit(weatherInfo.getForecastInfo4().getForecastTempHigh()));
+            weatherData.forecast.tempMax.add(4, celsiusToFahrenheit(weatherInfo.getForecastInfo5().getForecastTempHigh()));
 
             weatherData.forecast.imageURL.add(0, weatherInfo.getForecastInfo1().getForecastConditionIconURL());
             weatherData.forecast.imageURL.add(1, weatherInfo.getForecastInfo2().getForecastConditionIconURL());
@@ -236,5 +243,12 @@ public class WeatherFragment extends Fragment {
 
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.scrollToPosition(scrollPosition);
+    }
+
+    private int celsiusToFahrenheit(int celsius){
+
+        int fahrenheit = 32 + ((celsius * 9) / 5);
+
+        return fahrenheit;
     }
 }

@@ -66,15 +66,20 @@ public class WeatherForecastAdapter extends RecyclerView.Adapter<WeatherForecast
     @Override
     public void onBindViewHolder(WeatherForecastAdapter.MyViewHolder holder, int position) {
 
-        //if null then setup some dummy weather until new data can be loaded
-        if(weatherData == null){
+        //if null or size 0 then setup some dummy weather until new data can be loaded
+        if(weatherData == null || weatherData.forecast.description.size() <= 0){
             holder.day.setText("---");
             holder.description.setText("--------");
             holder.tempMin.setText("--°");
             holder.tempMax.setText("--°");
         }
         else {
-            holder.day.setText(weatherData.forecast.dayOfWeek.get(position));
+            if(position == 0) {
+                holder.day.setText("Today");
+            }
+            else{
+                holder.day.setText(weatherData.forecast.dayOfWeek.get(position));
+            }
             holder.description.setText(weatherData.forecast.description.get(position));
             holder.tempMin.setText(Integer.toString(weatherData.forecast.tempMin.get(position)) + "°");
             holder.tempMax.setText(Integer.toString(weatherData.forecast.tempMax.get(position)) + "°");

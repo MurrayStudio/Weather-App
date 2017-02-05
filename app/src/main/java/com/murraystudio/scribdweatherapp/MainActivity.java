@@ -11,8 +11,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 
 import com.google.android.gms.common.api.Status;
@@ -29,6 +27,8 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
 
     private final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 0;
 
+    private SharedPreferences sharedPref;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +37,8 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
         setSupportActionBar(toolbar);
 
         fragmentManager = getFragmentManager();
+
+        sharedPref = getPreferences(Context.MODE_PRIVATE);
 
         permissionsCheck();
 
@@ -61,10 +63,18 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
             autocompleteFragment.setOnPlaceSelectedListener(this);
         }
 
-        fragmentManager
-                .beginTransaction()
-                .hide(autocompleteFragment)
-                .commit();
+        if(sharedPref.getBoolean("searchopen", false) == true) {
+            fragmentManager
+                    .beginTransaction()
+                    .hide(weatherFragment)
+                    .commit();
+        }
+        else{
+            fragmentManager
+                    .beginTransaction()
+                    .hide(autocompleteFragment)
+                    .commit();
+        }
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -78,35 +88,19 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                         .show(autocompleteFragment)
                         .addToBackStack("Search Cities")
                         .commit();
+
+                //keep note that we have opened the search fragment
+                SharedPreferences.Editor editor = sharedPref.edit();;
+                editor.putBoolean("searchopen", true);
+                editor.commit();
+
             }
         });
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
     public void onPlaceSelected(Place place) {
-        Log.i("MAIN ACTIVITY", "Place Selected: " + place.getName());
+        Log.i("MAIN ACTIVITY", "Place Selected: " + place.getAddress());
         weatherFragment.updateWeatherBySearch(place.getName().toString());
 
         fragmentManager
@@ -115,6 +109,11 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                 .hide(autocompleteFragment)
                 .show(weatherFragment)
                 .commit();
+
+        //keep note that we have closed  the search fragment
+        SharedPreferences.Editor editor = sharedPref.edit();;
+        editor.putBoolean("searchopen", false);
+        editor.commit();
     }
 
     @Override
@@ -139,7 +138,6 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
 
-        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
 
         switch (requestCode) {
