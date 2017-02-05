@@ -16,8 +16,7 @@
         android:layout_width="25dp"
         android:layout_height="25dp"
         android:layout_gravity="center"
-        android:layout_marginRight="5dp"
-        android:src="@android:drawable/ic_dialog_info" />
+        android:layout_marginRight="5dp" />
 
     <TextView
         android:id="@+id/description"
@@ -29,6 +28,7 @@
         android:id="@+id/maximum_temperature"
         android:text="19°"
         android:layout_weight="1"
+        android:layout_marginRight="3dp"
         style="@style/WeatherForecastListItemTextEmphasis" />
 
     <TextView

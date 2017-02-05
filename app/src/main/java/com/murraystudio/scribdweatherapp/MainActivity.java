@@ -2,6 +2,8 @@ package com.murraystudio.scribdweatherapp;
 
 import android.Manifest;
 import android.app.FragmentManager;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -20,13 +22,6 @@ import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 
 public class MainActivity extends AppCompatActivity implements PlaceSelectionListener {
 
-    //Client ID (Consumer Key)
-    //dj0yJmk9MW5TVlY1bTQ1YkpHJmQ9WVdrOU1IZ3lTMDA0TTJNbWNHbzlNQS0tJnM9Y29uc3VtZXJzZWNyZXQmeD1jNA--
-    //Client Secret (Consumer Secret)
-    //0fbe3181ed15e082ebf693048d5fd8b4c426b064
-
-    //AIzaSyBI9fQtuPNp30rRfTrauC7QYaVCOjCmolw
-
     private WeatherFragment weatherFragment;
     private PlaceAutocompleteFragment autocompleteFragment;
 
@@ -43,6 +38,8 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
 
         fragmentManager = getFragmentManager();
 
+        permissionsCheck();
+
         if (savedInstanceState == null) {
             // Retrieve the PlaceAutocompleteFragment.
             autocompleteFragment = new PlaceAutocompleteFragment();
@@ -58,14 +55,11 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                     .add(R.id.fragment_container, weatherFragment, "weatherFragment")
                     .add(R.id.fragment_container, autocompleteFragment, "autocompleteFragment")
                     .commit();
-        }
-        else{
+        } else {
             weatherFragment = (WeatherFragment) fragmentManager.findFragmentByTag("weatherFragment");
             autocompleteFragment = (PlaceAutocompleteFragment) fragmentManager.findFragmentByTag("autocompleteFragment");
             autocompleteFragment.setOnPlaceSelectedListener(this);
         }
-
-        permissionsCheck();
 
         fragmentManager
                 .beginTransaction()
@@ -77,13 +71,13 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
             @Override
             public void onClick(View view) {
 
-                        fragmentManager
-                                .beginTransaction()
-                                .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out, android.R.animator.fade_in, android.R.animator.fade_out)
-                                .hide(weatherFragment)
-                                .show(autocompleteFragment)
-                                .addToBackStack("Search Cities")
-                                .commit();
+                fragmentManager
+                        .beginTransaction()
+                        .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out, android.R.animator.fade_in, android.R.animator.fade_out)
+                        .hide(weatherFragment)
+                        .show(autocompleteFragment)
+                        .addToBackStack("Search Cities")
+                        .commit();
             }
         });
     }
@@ -135,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                 != PackageManager.PERMISSION_GRANTED) {
 
             requestPermissions(new String[]{
-                            Manifest.permission.READ_CONTACTS,
+                            Manifest.permission.ACCESS_COARSE_LOCATION,
                             Manifest.permission.ACCESS_FINE_LOCATION},
                     ASK_MULTIPLE_PERMISSION_REQUEST_CODE);
         }
@@ -144,25 +138,32 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
+
+        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
         switch (requestCode) {
             case ASK_MULTIPLE_PERMISSION_REQUEST_CODE: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
+                    editor.putBoolean("permissions", true);
+                    editor.commit();
+
+                    weatherFragment.updateWeatherByLocation();
+
+                    Log.i("PERMISSION TRUE", "PERMISSION TRUE");
 
                 } else {
 
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
+                    editor.putBoolean("permissions", false);
+                    editor.commit();
+
+                    Log.i("PERMISSION False", "PERMISSION False");
                 }
                 return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 }

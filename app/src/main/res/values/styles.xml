@@ -28,6 +28,7 @@
     <style name="LocationText" parent="BaseText">
         <item name="android:textSize">@dimen/location_text</item>
         <item name="android:ellipsize">none</item>
+        <item name="android:textColor">@color/text_de_emphasized</item>
     </style>
 
     <style name="CurrentTemperatureText" parent="BaseText">
@@ -42,6 +43,7 @@
         <item name="android:paddingTop">@dimen/list_item_text_padding</item>
         <item name="android:paddingBottom">@dimen/list_item_text_padding</item>
         <item name="android:layout_width">0dp</item>
+        <item name="android:textColor">@color/text_de_emphasized</item>
         <!-- To force the text views into columns -->
     </style>
 

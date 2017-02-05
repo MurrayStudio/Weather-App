@@ -1,13 +1,17 @@
 package com.murraystudio.scribdweatherapp;
 
 import android.app.Fragment;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,7 +32,9 @@ public class WeatherFragment extends Fragment {
 
     private WeatherData weatherData;
     private YahooWeather mYahooWeather;
+
     private SwipeRefreshLayout swipeRefreshLayout;
+    private LinearLayout weatherLinearLayout;
 
     private String currentCity = "portland oregon";
 
@@ -66,6 +72,8 @@ public class WeatherFragment extends Fragment {
         temp = (TextView) rootView.findViewById(R.id.current_temperature);
         city = (TextView) rootView.findViewById(R.id.location_name);
 
+        weatherLinearLayout = (LinearLayout) rootView.findViewById(R.id.weather_container_view);
+
         //swipe down to refresh data
         swipeRefreshLayout =  (SwipeRefreshLayout) rootView.findViewById(R.id.weather_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -76,7 +84,22 @@ public class WeatherFragment extends Fragment {
         });
 
         if (savedInstanceState == null) {
-            updateWeatherByLocation();
+            //we have no weatherdata so build dummy views and set it to our recyclerview
+            weatherForecastAdapter = new WeatherForecastAdapter(null, getActivity());
+            mRecyclerView.setAdapter(weatherForecastAdapter);
+
+            SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+            if(sharedPref.getBoolean("permissions", false) == true) {
+
+                Log.i("TRUE", "TRUE");
+
+                updateWeatherByLocation();
+            }
+            else{
+                updateWeatherBySearch("Mountain View California");
+
+                Log.i("False", "False");
+            }
         }
         else{
 
@@ -180,6 +203,9 @@ public class WeatherFragment extends Fragment {
 
         temp.setText(Integer.toString(weatherData.condition.currentTemp) + "°");
         city.setText(weatherData.location.name);
+
+        weatherLinearLayout.setVisibility(View.VISIBLE);
+
         swipeRefreshLayout.setRefreshing(false);
     }
 
