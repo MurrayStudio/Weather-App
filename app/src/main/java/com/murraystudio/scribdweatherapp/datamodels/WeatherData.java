@@ -7,12 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by sushi_000 on 2/3/2017.
+ * Author Shamus Murray
+ *
+ * Holds forecast data for a place. Parcelable so it can
+ * be passed between config changes.
  */
-
 public class WeatherData implements Parcelable{
-
-    public String imageUrl;
 
     public Condition condition = new Condition();
     public Forecast forecast = new Forecast();
@@ -42,7 +42,7 @@ public class WeatherData implements Parcelable{
     }
 
     public WeatherData(Parcel in) {
-        imageUrl = in.readString();
+        //empty
     }
 
     public static final Creator<WeatherData> CREATOR = new Creator<WeatherData>() {
