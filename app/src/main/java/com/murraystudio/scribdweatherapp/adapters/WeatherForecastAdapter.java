@@ -14,9 +14,10 @@ import com.murraystudio.scribdweatherapp.R;
 import com.murraystudio.scribdweatherapp.datamodels.WeatherData;
 
 /**
- * Created by sushi_000 on 2/5/2017.
+ * Author Shamus Murray
+ *
+ * Adapter for recyclerview. Displays views for 5 day forecast
  */
-
 public class WeatherForecastAdapter extends RecyclerView.Adapter<WeatherForecastAdapter.MyViewHolder> {
 
     private WeatherData weatherData;
@@ -26,8 +27,6 @@ public class WeatherForecastAdapter extends RecyclerView.Adapter<WeatherForecast
         this.weatherData = weatherData;
         this.activity = activity;
     }
-
-
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -48,7 +47,6 @@ public class WeatherForecastAdapter extends RecyclerView.Adapter<WeatherForecast
             tempMin = (TextView) v.findViewById(R.id.minimum_temperature);
             tempMax = (TextView) v.findViewById(R.id.maximum_temperature);
             conditionImage = (ImageView) v.findViewById(R.id.conditionImage);
-
         }
     }
 
@@ -66,14 +64,16 @@ public class WeatherForecastAdapter extends RecyclerView.Adapter<WeatherForecast
     @Override
     public void onBindViewHolder(WeatherForecastAdapter.MyViewHolder holder, int position) {
 
-        //if null or size 0 then setup some dummy weather until new data can be loaded
+        //if null or size 0 weatherData then setup some dummy weather until new data can be loaded
         if(weatherData == null || weatherData.forecast.description.size() <= 0){
             holder.day.setText("---");
             holder.description.setText("--------");
             holder.tempMin.setText("--°");
             holder.tempMax.setText("--°");
         }
+        //our weatherData has data, assign it to appropriate views
         else {
+            //position 0 is today
             if(position == 0) {
                 holder.day.setText("Today");
             }
@@ -84,7 +84,7 @@ public class WeatherForecastAdapter extends RecyclerView.Adapter<WeatherForecast
             holder.tempMin.setText(Integer.toString(weatherData.forecast.tempMin.get(position)) + "°");
             holder.tempMax.setText(Integer.toString(weatherData.forecast.tempMax.get(position)) + "°");
 
-            //Use Glide to load images from URL and display in Cardview Imageviews.
+            //Use Glide to load images from URL and display in imageview
             String mediaURL = weatherData.forecast.imageURL.get(position);
             Glide.with(activity)
                     .load(mediaURL)

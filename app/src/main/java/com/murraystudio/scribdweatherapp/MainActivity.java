@@ -18,14 +18,19 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 
+
+/**
+ * Author Shamus Murray
+ *
+ * Main Activity that handles Fragments, permissions, and any viewgroup's holding fragments
+ */
 public class MainActivity extends AppCompatActivity implements PlaceSelectionListener {
+
+    private final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 0;
 
     private WeatherFragment weatherFragment;
     private PlaceAutocompleteFragment autocompleteFragment;
-
     private FragmentManager fragmentManager;
-
-    private final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 0;
 
     private SharedPreferences sharedPref;
 
@@ -37,45 +42,54 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
         setSupportActionBar(toolbar);
 
         fragmentManager = getFragmentManager();
-
         sharedPref = getPreferences(Context.MODE_PRIVATE);
 
+        //check our location permissions to see if we can use
+        //weather by location feature.
         permissionsCheck();
 
+        //if no config changes
         if (savedInstanceState == null) {
-            // Retrieve the PlaceAutocompleteFragment.
+            // Retrieve the PlaceAutocompleteFragment (search for places to get weather here)
             autocompleteFragment = new PlaceAutocompleteFragment();
+
             // Register a listener to receive callbacks when a place has been selected or an error has
             // occurred.
             autocompleteFragment.setOnPlaceSelectedListener(this);
 
+            // Retrieve the WeatherFragment (displays weather data)
             weatherFragment = new WeatherFragment();
-            //getFragmentManager().beginTransaction().replace(R.id.fragment_container, weatherFragment).commit();
 
+            //we add both fragments so we can hide and show them later
             fragmentManager
                     .beginTransaction()
                     .add(R.id.fragment_container, weatherFragment, "weatherFragment")
                     .add(R.id.fragment_container, autocompleteFragment, "autocompleteFragment")
                     .commit();
-        } else {
+        }
+        //config change so find our old fragments and readd our place selected listener
+        else {
             weatherFragment = (WeatherFragment) fragmentManager.findFragmentByTag("weatherFragment");
             autocompleteFragment = (PlaceAutocompleteFragment) fragmentManager.findFragmentByTag("autocompleteFragment");
             autocompleteFragment.setOnPlaceSelectedListener(this);
         }
 
-        if(sharedPref.getBoolean("searchopen", false) == true) {
+        //if there's a config change and AutocompleteFragment was open then
+        //make sure to keep it open and hide weatherFragment, otherwise don't.
+        if (sharedPref.getBoolean("searchopen", false) == true) {
             fragmentManager
                     .beginTransaction()
                     .hide(weatherFragment)
                     .commit();
-        }
-        else{
+        } else {
             fragmentManager
                     .beginTransaction()
                     .hide(autocompleteFragment)
                     .commit();
         }
 
+        //The floating action button opens up the AutocompleteFragment to
+        //search for new places to get weather for.
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                         .commit();
 
                 //keep note that we have opened the search fragment
-                SharedPreferences.Editor editor = sharedPref.edit();;
+                SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putBoolean("searchopen", true);
                 editor.commit();
 
@@ -98,9 +112,10 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
         });
     }
 
+    //AutocompleteFragment returns selected place results here
     @Override
     public void onPlaceSelected(Place place) {
-        Log.i("MAIN ACTIVITY", "Place Selected: " + place.getAddress());
+        //update weather for this selected place in weatherFragment
         weatherFragment.updateWeatherBySearch(place.getName().toString());
 
         fragmentManager
@@ -110,17 +125,19 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                 .show(weatherFragment)
                 .commit();
 
-        //keep note that we have closed  the search fragment
-        SharedPreferences.Editor editor = sharedPref.edit();;
+        //keep note that we have closed the search fragment
+        SharedPreferences.Editor editor = sharedPref.edit();
         editor.putBoolean("searchopen", false);
         editor.commit();
     }
 
+    //AutocompleteFragment returns error results here
     @Override
     public void onError(Status status) {
         Log.e("MAIN ACTIVITY", "onError: Status = " + status.toString());
     }
 
+    //We check our location permissions here.
     private void permissionsCheck() {
         // Here, thisActivity is the current activity
         if (ContextCompat.checkSelfPermission(this,
@@ -134,6 +151,7 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
         }
     }
 
+    //Where we get the result of the permission request
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
@@ -145,20 +163,14 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
+                    //store pref saying permissions have been granted
                     editor.putBoolean("permissions", true);
                     editor.commit();
-
                     weatherFragment.updateWeatherByLocation();
-
-                    Log.i("PERMISSION TRUE", "PERMISSION TRUE");
-
                 } else {
-
+                    //store pref saying permissions have not been granted
                     editor.putBoolean("permissions", false);
                     editor.commit();
-
-                    Log.i("PERMISSION False", "PERMISSION False");
                 }
                 return;
             }

@@ -24,18 +24,24 @@ import zh.wang.android.yweathergetter4a.YahooWeatherInfoListener;
 import static android.content.ContentValues.TAG;
 
 /**
- * Created by sushi_000 on 2/4/2017.
+ * Author Shamus Murray
+ *
+ * Fragment that handles displaying the data collected for a certain location
  */
-
 public class WeatherFragment extends Fragment {
 
+    //WeatherData holds all data related to the weather for a place
     private WeatherData weatherData;
-    private YahooWeather mYahooWeather;
+
+    //YahooWeather is part of the YWeatherGetter4a API wrapper for Yahoo Weather
+    // that gets weather data to fill the WeatherData object.
+    private YahooWeather yahooWeather;
 
     private SwipeRefreshLayout swipeRefreshLayout;
     private LinearLayout weatherLinearLayout;
 
-    private String currentCity = "portland oregon";
+    //default place if no location established
+    private String currentCity = "Portland Oregon";
 
     protected RecyclerView mRecyclerView;
     protected WeatherForecastAdapter weatherForecastAdapter;
@@ -46,15 +52,16 @@ public class WeatherFragment extends Fragment {
         LINEAR_LAYOUT_MANAGER
     }
 
-    private TextView city;
-    private TextView temp;
+    //these views are not in the recyclerview so they are handled here
+    private TextView place;
+    private TextView currentTemp;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         weatherData = new WeatherData();
-        mYahooWeather = YahooWeather.getInstance();
+        yahooWeather = YahooWeather.getInstance();
 
     }
 
@@ -64,17 +71,18 @@ public class WeatherFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.weather, container, false);
         rootView.setTag(TAG);
 
+        //recyclerview setup
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.forecast_recycler_view);
         mLayoutManager = new LinearLayoutManager(getActivity());
         setRecyclerViewLayout();
 
-        temp = (TextView) rootView.findViewById(R.id.current_temperature);
-        city = (TextView) rootView.findViewById(R.id.location_name);
-
+        //view setup
+        currentTemp = (TextView) rootView.findViewById(R.id.current_temperature);
+        place = (TextView) rootView.findViewById(R.id.location_name);
         weatherLinearLayout = (LinearLayout) rootView.findViewById(R.id.weather_container_view);
 
-        //swipe down to refresh data
-        swipeRefreshLayout =  (SwipeRefreshLayout) rootView.findViewById(R.id.weather_swipe_refresh);
+        //swipe down to refresh forecast for the current city
+        swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.weather_swipe_refresh);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -82,63 +90,69 @@ public class WeatherFragment extends Fragment {
             }
         });
 
+        //if no config change
         if (savedInstanceState == null) {
-            //we have no weatherdata so build dummy views and set it to our recyclerview
+            //we have no weatherdata so build dummy data to fill our views and set it to our recyclerview
+            //we pass null here but the adapter handles filling dummy info if null is passed
             weatherForecastAdapter = new WeatherForecastAdapter(null, getActivity());
             mRecyclerView.setAdapter(weatherForecastAdapter);
 
+            //if we have location privileges then we try and get the current location's forecast
+            //otherwise default to currentcity's forecast
             SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
-            if(sharedPref.getBoolean("permissions", false) == true) {
+            if (sharedPref.getBoolean("permissions", false) == true) {
 
                 updateWeatherByLocation();
-            }
-            else{
-                updateWeatherBySearch("Mountain View California");
+            } else {
+                updateWeatherBySearch(currentCity);
             }
         }
-        else{
-
+        //if we had a config change
+        else {
+            //gather currentcity string from previous state
             currentCity = savedInstanceState.getString("currentcity");
 
-            //gets weather data
-            if(weatherData != null) {
+            //gets weather data from previous state
+            if (weatherData != null) {
                 weatherData = savedInstanceState.getParcelable("key"); //config change so old data before change
 
+                //reset adapter with previous state information
                 weatherForecastAdapter = new WeatherForecastAdapter(weatherData, getActivity());
                 mRecyclerView.setAdapter(weatherForecastAdapter);
 
+                //make the call with a null param so any non-recyclerview views get updated with previous information too
                 updateWeatherUI(null); //update UI using old state.
 
+            } else {
+                //we have no previous weather data so try retrieving new data
+                updateWeatherBySearch(currentCity);
             }
-            else{
-                updateWeatherBySearch(currentCity); //we have no previous weather data so try retrieving new data
-            }
-
-
         }
-
         return rootView;
     }
 
+    //Make a call to Yahoo Weather API with a place search term
+    public void updateWeatherBySearch(String placeSearchTerm) {
 
-    public void updateWeatherBySearch(String placeSearchTerm){
-
+        //show progress
         swipeRefreshLayout.setRefreshing(true);
 
+        //update currentcity to new search term
         currentCity = placeSearchTerm;
 
-        mYahooWeather.queryYahooWeatherByPlaceName(getActivity(), placeSearchTerm, new YahooWeatherInfoListener() {
+        yahooWeather.queryYahooWeatherByPlaceName(getActivity(), placeSearchTerm, new YahooWeatherInfoListener() {
             @Override
             public void gotWeatherInfo(WeatherInfo weatherInfo, YahooWeather.ErrorType errorType) {
-                if(weatherInfo != null) {
+                //we have new data in WeatherInfo so pass to updateWeatherUI to update views
+                if (weatherInfo != null) {
                     updateWeatherUI(weatherInfo);
                 }
-                else{
-                    if(errorType.toString().equals("ParsingFailed")){
-                        Toast.makeText(getActivity(), "Can't get weather for that city.", Toast.LENGTH_LONG).show();
+                //handle any errors here
+                else {
+                    if (errorType.toString().equals("ParsingFailed")) {
+                        Toast.makeText(getActivity(), "Can't get weather for that place.", Toast.LENGTH_LONG).show();
                         updateWeatherBySearch("Portland Oregon");
-                    }
-                    else {
+                    } else {
                         Toast.makeText(getActivity(), "Unable to pull weather info from provider.", Toast.LENGTH_LONG).show();
                         swipeRefreshLayout.setRefreshing(false);
                     }
@@ -147,18 +161,21 @@ public class WeatherFragment extends Fragment {
         });
     }
 
-    public void updateWeatherByLocation(){
+    //Make a call to Yahoo Weather API using the current location as search term
+    public void updateWeatherByLocation() {
 
         swipeRefreshLayout.setRefreshing(true);
 
-        mYahooWeather.queryYahooWeatherByGPS(getActivity(), new YahooWeatherInfoListener() {
+        yahooWeather.queryYahooWeatherByGPS(getActivity(), new YahooWeatherInfoListener() {
             @Override
             public void gotWeatherInfo(WeatherInfo weatherInfo, YahooWeather.ErrorType errorType) {
-                if(weatherInfo != null) {
+                //we have new data in WeatherInfo so pass to updateWeatherUI to update views
+                if (weatherInfo != null) {
                     currentCity = weatherInfo.getLocationCity();
                     updateWeatherUI(weatherInfo);
                 }
-                else{
+                //handle any errors here
+                else {
                     Toast.makeText(getActivity(), "Unable to pull weather info using current location.", Toast.LENGTH_LONG).show();
                     updateWeatherBySearch("Portland Oregon");
                 }
@@ -166,11 +183,12 @@ public class WeatherFragment extends Fragment {
         });
     }
 
-    private void updateWeatherUI(WeatherInfo weatherInfo){
+    //where we update the WeatherData object with new data via YahooWeather's WeatherInfo object.
+    private void updateWeatherUI(WeatherInfo weatherInfo) {
 
         //if weatherInfo is null then just use previous weatherData values
         //otherwise update weatherData object with new data
-        if(weatherInfo != null) {
+        if (weatherInfo != null) {
             weatherData.condition.currentTemp = celsiusToFahrenheit(weatherInfo.getCurrentTemp());
             weatherData.location.name = weatherInfo.getLocationCity();
             weatherData.forecast.dayOfWeek.add(0, weatherInfo.getForecastInfo1().getForecastDay());
@@ -208,14 +226,18 @@ public class WeatherFragment extends Fragment {
         weatherForecastAdapter = new WeatherForecastAdapter(weatherData, getActivity());
         mRecyclerView.setAdapter(weatherForecastAdapter);
 
-        temp.setText(Integer.toString(weatherData.condition.currentTemp) + "°");
-        city.setText(weatherData.location.name);
+        //update non-recycler views
+        currentTemp.setText(Integer.toString(weatherData.condition.currentTemp) + "°");
+        place.setText(weatherData.location.name);
 
+        //make the view visible now that it has data
         weatherLinearLayout.setVisibility(View.VISIBLE);
 
+        //we are done, stop progress
         swipeRefreshLayout.setRefreshing(false);
     }
 
+    //Handle state saving during config change here
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -223,12 +245,9 @@ public class WeatherFragment extends Fragment {
         outState.putParcelable("key", weatherData);
     }
 
-    /*
-*
-* A helper method to set the layout for the recycler view.
-* If the layout is already set, then we get the scroll position.
-*
- */
+
+    //A helper method to set the layout for the recycler view.
+    //If the layout is already set, then we get the scroll position.
     private void setRecyclerViewLayout() {
         int scrollPosition = 0;
 
@@ -245,7 +264,8 @@ public class WeatherFragment extends Fragment {
         mRecyclerView.scrollToPosition(scrollPosition);
     }
 
-    private int celsiusToFahrenheit(int celsius){
+    //a simple method to convert temps to fahrenheit
+    private int celsiusToFahrenheit(int celsius) {
 
         int fahrenheit = 32 + ((celsius * 9) / 5);
 
