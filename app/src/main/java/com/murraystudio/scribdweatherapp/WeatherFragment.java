@@ -25,7 +25,7 @@ import static android.content.ContentValues.TAG;
 
 /**
  * Author Shamus Murray
- *
+ * <p>
  * Fragment that handles displaying the data collected for a certain location
  */
 public class WeatherFragment extends Fragment {
@@ -42,6 +42,8 @@ public class WeatherFragment extends Fragment {
 
     //default place if no location established
     private String currentCity = "Portland Oregon";
+
+    private SharedPreferences sharedPref;
 
     protected RecyclerView mRecyclerView;
     protected WeatherForecastAdapter weatherForecastAdapter;
@@ -90,6 +92,11 @@ public class WeatherFragment extends Fragment {
             }
         });
 
+        //gather currentcity string from shared pref
+        sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+
+        currentCity = sharedPref.getString("currentcity", "Portland Oregon");
+
         //if no config change
         if (savedInstanceState == null) {
             //we have no weatherdata so build dummy data to fill our views and set it to our recyclerview
@@ -99,9 +106,8 @@ public class WeatherFragment extends Fragment {
 
             //if we have location privileges then we try and get the current location's forecast
             //otherwise default to currentcity's forecast
-            SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
-            if (sharedPref.getBoolean("permissions", false) == true) {
-
+            sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+            if (sharedPref.getBoolean("permissions", false) == true && currentCity.equals("Portland Oregon")) {
                 updateWeatherByLocation();
             } else {
                 updateWeatherBySearch(currentCity);
@@ -109,24 +115,17 @@ public class WeatherFragment extends Fragment {
         }
         //if we had a config change
         else {
-            //gather currentcity string from previous state
-            currentCity = savedInstanceState.getString("currentcity");
+            //reset adapter with previous state information
+            weatherForecastAdapter = new WeatherForecastAdapter(weatherData, getActivity());
+            mRecyclerView.setAdapter(weatherForecastAdapter);
 
-            //gets weather data from previous state
-            if (weatherData != null) {
-                weatherData = savedInstanceState.getParcelable("key"); //config change so old data before change
+            //make the call with a null param so any non-recyclerview views get updated with previous information too
+            updateWeatherBySearch(currentCity); //update UI using old state.
 
-                //reset adapter with previous state information
-                weatherForecastAdapter = new WeatherForecastAdapter(weatherData, getActivity());
-                mRecyclerView.setAdapter(weatherForecastAdapter);
 
-                //make the call with a null param so any non-recyclerview views get updated with previous information too
-                updateWeatherUI(null); //update UI using old state.
+            //we have no previous weather data so try retrieving new data
+            updateWeatherBySearch(currentCity);
 
-            } else {
-                //we have no previous weather data so try retrieving new data
-                updateWeatherBySearch(currentCity);
-            }
         }
         return rootView;
     }
@@ -139,6 +138,10 @@ public class WeatherFragment extends Fragment {
 
         //update currentcity to new search term
         currentCity = placeSearchTerm;
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString("currentcity", currentCity);
+        editor.commit();
 
         yahooWeather.queryYahooWeatherByPlaceName(getActivity(), placeSearchTerm, new YahooWeatherInfoListener() {
             @Override
@@ -172,6 +175,11 @@ public class WeatherFragment extends Fragment {
                 //we have new data in WeatherInfo so pass to updateWeatherUI to update views
                 if (weatherInfo != null) {
                     currentCity = weatherInfo.getLocationCity();
+
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString("currentcity", currentCity);
+                    editor.commit();
+
                     updateWeatherUI(weatherInfo);
                 }
                 //handle any errors here
@@ -236,15 +244,6 @@ public class WeatherFragment extends Fragment {
         //we are done, stop progress
         swipeRefreshLayout.setRefreshing(false);
     }
-
-    //Handle state saving during config change here
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putString("currentcity", currentCity);
-        outState.putParcelable("key", weatherData);
-    }
-
 
     //A helper method to set the layout for the recycler view.
     //If the layout is already set, then we get the scroll position.

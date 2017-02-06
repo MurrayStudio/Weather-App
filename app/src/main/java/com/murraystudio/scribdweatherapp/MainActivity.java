@@ -34,6 +34,8 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
 
     private SharedPreferences sharedPref;
 
+    private boolean searchOpen = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,16 +69,17 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                     .add(R.id.fragment_container, autocompleteFragment, "autocompleteFragment")
                     .commit();
         }
-        //config change so find our old fragments and readd our place selected listener
+        //config change so find our old fragments and ready our place selected listener
         else {
             weatherFragment = (WeatherFragment) fragmentManager.findFragmentByTag("weatherFragment");
             autocompleteFragment = (PlaceAutocompleteFragment) fragmentManager.findFragmentByTag("autocompleteFragment");
             autocompleteFragment.setOnPlaceSelectedListener(this);
+            searchOpen = savedInstanceState.getBoolean("searchopen", false);
         }
 
         //if there's a config change and AutocompleteFragment was open then
         //make sure to keep it open and hide weatherFragment, otherwise don't.
-        if (sharedPref.getBoolean("searchopen", false) == true) {
+        if (searchOpen == true) {
             fragmentManager
                     .beginTransaction()
                     .hide(weatherFragment)
@@ -104,9 +107,7 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                         .commit();
 
                 //keep note that we have opened the search fragment
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putBoolean("searchopen", true);
-                editor.commit();
+                searchOpen = true;
 
             }
         });
@@ -125,10 +126,14 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                 .show(weatherFragment)
                 .commit();
 
-        //keep note that we have closed the search fragment
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putBoolean("searchopen", false);
-        editor.commit();
+        searchOpen = false;
+    }
+
+    //if AutocompleteFragment was open, it is closed now
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        searchOpen = false;
     }
 
     //AutocompleteFragment returns error results here
@@ -175,5 +180,12 @@ public class MainActivity extends AppCompatActivity implements PlaceSelectionLis
                 return;
             }
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        //was searchOpen before config change?
+        outState.putBoolean("searchopen", searchOpen);
+        super.onSaveInstanceState(outState);
     }
 }
